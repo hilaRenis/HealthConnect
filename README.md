@@ -34,19 +34,6 @@ Web Client (UI) – front-end for end-users
 
 Documentation – all project-related documents (architecture diagrams, reports, and progress documentation)
 
-⚙️ Current Development Status
-
-At this stage of development:
-
-✅ The web client has been built and is functional.
-
-⚙️ Some backend logic is implemented and still expanding.
-
-🐳 All parts of the system are containerized using Docker.
-
-🔄 Work is in progress to add CI/CD pipelines for automatic deployment and integration.
-
-The current focus is on building a working proof-of-concept and ensuring all main services can communicate securely.
 
 🩺 Planned Features
 
@@ -83,30 +70,6 @@ Encrypted communication between services (HTTPS)
 GDPR-compliant handling of sensitive data
 
 These measures ensure the protection of user and patient information across the system.
-
-🚧 Ongoing Work
-
-Development is still in progress.
-The next steps include:
-
-Completing the CI/CD setup for all repositories
-
-Adding and testing backend functionality
-
-Improving the front-end interface
-
-Strengthening service-to-service communication security
-
-📑 Documentation
-
-All related documents are stored in this repository:
-
-Architecture and design diagrams (C1, C2, C3)
-
-Technical reports and implementation notes
-
-Project documentation and progress updates
-
 👤 Author
 
 Name: Renis Hila
