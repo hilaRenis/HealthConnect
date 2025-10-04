@@ -70,9 +70,3 @@ Encrypted communication between services (HTTPS)
 GDPR-compliant handling of sensitive data
 
 These measures ensure the protection of user and patient information across the system.
-👤 Author
-
-Name: Renis Hila
-Institution: Fontys University of Applied Sciences
-Course: HBO-ICT — Semester 7
-Project: HealthConnect — Individual Assignment
