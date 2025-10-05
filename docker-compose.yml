@@ -1,0 +1,120 @@
+version: "3.9"
+services:
+  web-client:
+    build: ./web-client
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - JWT_SECRET=devsecret
+      - AUTH_URL=http://auth-service:3001
+      - PATIENT_URL=http://patient-service:3002
+      - DOCTOR_URL=http://doctor-service:3003
+      - APPT_URL=http://appointment-service:3004
+      - PHARMACY_URL=http://pharmacy-service:3005
+      - ADMIN_URL=http://admin-service:3006
+    depends_on:
+      - auth-service
+      - patient-service
+      - doctor-service
+      - appointment-service
+      - pharmacy-service
+      - admin-service
+
+  auth-service:
+    build: ./auth-service
+    environment:
+      - PORT=3001
+      - JWT_SECRET=devsecret
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=healthconnect
+    depends_on:
+      db:
+        condition: service_healthy
+
+  patient-service:
+    build: ./patient-service
+    environment:
+      - PORT=3002
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=healthconnect
+    depends_on:
+      db:
+        condition: service_healthy
+
+  doctor-service:
+    build: ./doctor-service
+    environment:
+      - PORT=3003
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=healthconnect
+    depends_on:
+      db:
+        condition: service_healthy
+
+  appointment-service:
+    build: ./appointment-service
+    environment:
+      - PORT=3004
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=healthconnect
+    depends_on:
+      db:
+        condition: service_healthy
+
+  pharmacy-service:
+    build: ./pharmacy-service
+    environment:
+      - PORT=3005
+
+  admin-service:
+    build: ./admin-service
+    environment:
+      - PORT=3006
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=healthconnect
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=healthconnect
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d healthconnect"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

@@ -1,0 +1,65 @@
+version: "3.9"
+services:
+  web-client:
+    build:
+      context: ./web-client
+      target: dev
+    command: npm start
+    volumes:
+      - ./web-client:/app
+      - /app/node_modules
+    ports:
+      - "3010:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - HOST=0.0.0.0
+      - WDS_SOCKET_PORT=0
+
+  api-gateway:
+    command: npm run dev
+    volumes:
+      - ./api-gateway/src:/app/src
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  auth-service:
+    command: npm run dev
+    volumes:
+      - ./auth-service/src:/app/src
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  patient-service:
+    command: npm run dev
+    volumes:
+      - ./patient-service/src:/app/src
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  doctor-service:
+    command: npm run dev
+    volumes:
+      - ./doctor-service/src:/app/src
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  appointment-service:
+    command: npm run dev
+    volumes:
+      - ./appointment-service/src:/app/src
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  admin-service:
+    command: npm run dev
+    volumes:
+      - ./admin-service/src:/app/src
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  pharmacy-service:
+    command: npm run dev
+    volumes:
+      - ./pharmacy-service/src:/app/src
+    environment:
+      - CHOKIDAR_USEPOLLING=true
