@@ -32,9 +32,6 @@ API Gateway – manages routing and communication between services
 
 Web Client (UI) – front-end for end-users
 
-Documentation – all project-related documents (architecture diagrams, reports, and progress documentation)
-
-
 🩺 Planned Features
 
 Not all features from the full system specification will be implemented for this assignment.
@@ -56,17 +53,21 @@ Approve Prescription
 
 View Prescriptions
 
-These features represent the main interactions between users in the healthcare system.
 
-🔐 Security and Data Protection
+🔹 These features represent the main interactions between users in the healthcare system.
+- Services (each can live in a separate service)
+- api-gateway (port 8080) — entry point, JWT verify, routes to services
+- auth-service (3001) — register/login, issues JWTs
+- patient-service (3002) — patient profiles + prescription requests
+- doctor-service (3003) — review/approve/deny requests, manage schedule
+- appointment-service (3004) — schedule/cancel appointments
+- pharmacy-service (3005) — view approved prescriptions, mark dispensed
+- admin-service (3006) — basic stats
 
-Security is a core part of the project design.
-The system includes:
-
-Token-based authentication and authorization
-
-Encrypted communication between services (HTTPS)
-
-GDPR-compliant handling of sensitive data
-
-These measures ensure the protection of user and patient information across the system.
+🔹 The links to relevant git repo are:
+- https://github.com/hilaRenis/HealthConnect_admin-service
+- https://github.com/hilaRenis/HealthConnect_appointment-service
+- https://github.com/hilaRenis/HealthConnect_auth-service
+- https://github.com/hilaRenis/HealthConnect_doctor-service
+- https://github.com/hilaRenis/HealthConnect_patient-service
+- https://github.com/hilaRenis/HealthConnect_pharmacy-service
