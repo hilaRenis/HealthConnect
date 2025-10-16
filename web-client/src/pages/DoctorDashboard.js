@@ -1,7 +1,8 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {
     Container,
+    Divider,
     Paper,
     Table,
     TableBody,
@@ -10,6 +11,10 @@ import {
     TableHead,
     TableRow,
     Typography,
+    Button,
+    TextField,
+    Stack,
+    Box,
 } from '@mui/material';
 import doctorService from '../services/doctorService';
 import appointmentService from '../services/appointmentService';
@@ -23,7 +28,7 @@ const DoctorDashboard = () => {
     const {register, handleSubmit, reset} = useForm();
     const {user} = useAuth();
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             const patientsRes = await doctorService.getMyPatients(user.token);
             setPatients(patientsRes.data?.data || []);
@@ -36,11 +41,11 @@ const DoctorDashboard = () => {
         } catch (error) {
             console.error('Failed to fetch doctor data', error);
         }
-    };
+    }, [user.token]);
 
     useEffect(() => {
         fetchData();
-    }, [user.token]);
+    }, [fetchData]);
 
     const onAddScheduleSlot = async (data) => {
         try {
@@ -69,11 +74,48 @@ const DoctorDashboard = () => {
         }
     };
 
+    const hasPatients = patients.length > 0;
+    const hasSchedule = schedule.length > 0;
+    const hasPrescriptions = prescriptionRequests.length > 0;
+
     return (
         <Container>
             <Typography variant="h4" component="h1" gutterBottom>
                 Doctor Dashboard
             </Typography>
+            <Paper style={{padding: '16px', marginBottom: '16px'}}>
+                <Typography variant="h6" gutterBottom>My Patients</Typography>
+                {hasPatients ? (
+                    <TableContainer>
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Name</TableCell>
+                                    <TableCell>Email</TableCell>
+                                    <TableCell>Date of Birth</TableCell>
+                                    <TableCell>Conditions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {patients.map((patient) => (
+                                    <TableRow key={patient.id}>
+                                        <TableCell>{patient.name || '—'}</TableCell>
+                                        <TableCell>{patient.email || '—'}</TableCell>
+                                        <TableCell>{patient.dob || '—'}</TableCell>
+                                        <TableCell>
+                                            {Array.isArray(patient.conditions) && patient.conditions.length > 0
+                                                ? patient.conditions.join(', ')
+                                                : '—'}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                ) : (
+                    <Typography color="textSecondary">No patients assigned yet.</Typography>
+                )}
+            </Paper>
             <Paper style={{padding: '16px', marginBottom: '16px'}}>
                 <Typography variant="h6" gutterBottom>My Appointments</Typography>
                 {appointments.length === 0 ? (
@@ -111,6 +153,105 @@ const DoctorDashboard = () => {
                             </TableBody>
                         </Table>
                     </TableContainer>
+                )}
+            </Paper>
+            <Paper style={{padding: '16px', marginBottom: '16px'}}>
+                <Typography variant="h6" gutterBottom>My Schedule</Typography>
+                {hasSchedule ? (
+                    <TableContainer>
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Date</TableCell>
+                                    <TableCell>Slot</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {schedule.map((slot) => (
+                                    <TableRow key={slot.id}>
+                                        <TableCell>{slot.date || '—'}</TableCell>
+                                        <TableCell>{slot.slot || '—'}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                ) : (
+                    <Typography color="textSecondary">No availability defined yet.</Typography>
+                )}
+
+                <Divider sx={{my: 2}}/>
+
+                <Box component="form" onSubmit={handleSubmit(onAddScheduleSlot)} noValidate>
+                    <Stack direction={{xs: 'column', sm: 'row'}} spacing={2} alignItems="flex-end">
+                        <TextField
+                            label="Date"
+                            type="date"
+                            InputLabelProps={{shrink: true}}
+                            fullWidth
+                            {...register('date', {required: 'Date is required'})}
+                        />
+                        <TextField
+                            label="Time"
+                            type="time"
+                            InputLabelProps={{shrink: true}}
+                            fullWidth
+                            {...register('slot', {required: 'Time slot is required'})}
+                        />
+                        <Button variant="contained" color="primary" type="submit">
+                            Add Slot
+                        </Button>
+                    </Stack>
+                </Box>
+            </Paper>
+            <Paper style={{padding: '16px', marginBottom: '16px'}}>
+                <Typography variant="h6" gutterBottom>Prescription Requests</Typography>
+                {hasPrescriptions ? (
+                    <TableContainer>
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Medication</TableCell>
+                                    <TableCell>Notes</TableCell>
+                                    <TableCell>Status</TableCell>
+                                    <TableCell align="right">Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {prescriptionRequests.map((req) => (
+                                    <TableRow key={req.id}>
+                                        <TableCell>{req.medication || '—'}</TableCell>
+                                        <TableCell>{req.notes || '—'}</TableCell>
+                                        <TableCell>{req.status}</TableCell>
+                                        <TableCell align="right">
+                                            <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                                <Button
+                                                    size="small"
+                                                    variant="contained"
+                                                    color="success"
+                                                    onClick={() => handlePrescriptionAction(req.id, 'approve')}
+                                                    disabled={req.status === 'approved'}
+                                                >
+                                                    Approve
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    color="error"
+                                                    onClick={() => handlePrescriptionAction(req.id, 'deny')}
+                                                    disabled={req.status === 'denied'}
+                                                >
+                                                    Deny
+                                                </Button>
+                                            </Stack>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                ) : (
+                    <Typography color="textSecondary">No prescription requests pending.</Typography>
                 )}
             </Paper>
         </Container>

@@ -1,5 +1,95 @@
 version: "3.9"
+
 services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"   # Host/External clients
+      - "29092:29092" # Docker-internal clients
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # Two listeners:
+      # - PLAINTEXT for clients on your HOST (advertise host-accessible address)
+      # - PLAINTEXT_INTERNAL for containers on the Docker network
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+
+      # Single-node safe defaults
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  auth-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=auth_service
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+      - ./auth-service/db-init:/docker-entrypoint-initdb.d
+
+  patient-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=patient_service
+    volumes:
+      - patient_db_data:/var/lib/postgresql/data
+      - ./patient-service/db-init:/docker-entrypoint-initdb.d
+
+  doctor-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=doctor_service
+    volumes:
+      - doctor_db_data:/var/lib/postgresql/data
+      - ./doctor-service/db-init:/docker-entrypoint-initdb.d
+
+  appointment-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=appointment_service
+    volumes:
+      - appointment_db_data:/var/lib/postgresql/data
+      - ./appointment-service/db-init:/docker-entrypoint-initdb.d
+
+  admin-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=admin_service
+    volumes:
+      - admin_db_data:/var/lib/postgresql/data
+      - ./admin-service/db-init:/docker-entrypoint-initdb.d
+
   web-client:
     build: ./web-client
     ports:
@@ -20,6 +110,7 @@ services:
       - APPT_URL=http://appointment-service:3004
       - PHARMACY_URL=http://pharmacy-service:3005
       - ADMIN_URL=http://admin-service:3006
+      - KAFKA_BROKERS=kafka:9092
     depends_on:
       - auth-service
       - patient-service
@@ -33,88 +124,86 @@ services:
     environment:
       - PORT=3001
       - JWT_SECRET=devsecret
-      - DB_HOST=db
+      - DB_HOST=auth-db
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - DB_NAME=healthconnect
+      - DB_NAME=auth_service
+      - KAFKA_BROKERS=kafka:9092
     depends_on:
-      db:
-        condition: service_healthy
+      - auth-db
+      - kafka
 
   patient-service:
     build: ./patient-service
     environment:
       - PORT=3002
-      - DB_HOST=db
+      - DB_HOST=patient-db
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - DB_NAME=healthconnect
+      - DB_NAME=patient_service
+      - KAFKA_BROKERS=kafka:9092
     depends_on:
-      db:
-        condition: service_healthy
+      - patient-db
+      - kafka
 
   doctor-service:
     build: ./doctor-service
     environment:
       - PORT=3003
-      - DB_HOST=db
+      - DB_HOST=doctor-db
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - DB_NAME=healthconnect
+      - DB_NAME=doctor_service
+      - KAFKA_BROKERS=kafka:9092
     depends_on:
-      db:
-        condition: service_healthy
+      - doctor-db
+      - kafka
 
   appointment-service:
     build: ./appointment-service
     environment:
       - PORT=3004
-      - DB_HOST=db
+      - DB_HOST=appointment-db
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - DB_NAME=healthconnect
+      - DB_NAME=appointment_service
+      - KAFKA_BROKERS=kafka:9092
     depends_on:
-      db:
-        condition: service_healthy
+      - appointment-db
+      - kafka
 
   pharmacy-service:
     build: ./pharmacy-service
     environment:
       - PORT=3005
+      - KAFKA_BROKERS=kafka:9092
+    depends_on:
+      - kafka
 
   admin-service:
     build: ./admin-service
     environment:
       - PORT=3006
-      - DB_HOST=db
+      - DB_HOST=admin-db
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - DB_NAME=healthconnect
+      - DB_NAME=admin_service
+      - KAFKA_BROKERS=kafka:9092
     depends_on:
-      db:
-        condition: service_healthy
-
-  db:
-    image: postgres:13
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=healthconnect
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./db-init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d healthconnect"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - admin-db
+      - kafka
 
 volumes:
-  postgres_data:
+  auth_db_data:
+  patient_db_data:
+  doctor_db_data:
+  appointment_db_data:
+  admin_db_data:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:

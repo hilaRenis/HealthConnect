@@ -3,7 +3,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import PatientForm from '../components/PatientForm';
 import adminService from '../services/adminService';
 import {useAuth} from '../context/AuthContext';
-import {Paper, Typography, FormControl, InputLabel, Select, MenuItem, Button} from '@mui/material';
+import {Button, FormControl, InputLabel, MenuItem, Paper, Select, Typography} from '@mui/material';
 
 const PatientEditPage = () => {
     const navigate = useNavigate();
